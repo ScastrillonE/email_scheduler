@@ -2,7 +2,9 @@ version: '3.7'
 services:
 
   myproj_redis:
-    image: redis:4.0.6-alpine
+    image: redis:4.0.6
+    environment: 
+      TZ: America/Bogota
     ports:
       - "6379:6379"
     volumes:
@@ -12,13 +14,20 @@ services:
     build:
         context: .
         dockerfile: ./compose/local/fastapi/Dockerfile
-    command: uvicorn api:app --host 0.0.0.0 --port 5057
+    command: uvicorn api:app --host 0.0.0.0 --port 8083 --reload
+    volumes:
+      - type: bind
+        source: ./
+        target: /home/scheduler
     ports:
-      - "5057:5057"
+      - "8083:8083"
     depends_on:
       - myproj_redis
     links:
       - myproj_redis
+    networks: 
+      - scheduler_redis_python_default
+      - intermediate_network
 
   myproj_worker:
     build:
@@ -29,3 +38,11 @@ services:
       - myproj_redis
     links:
       - myproj_redis
+
+networks: 
+  intermediate_network:
+    driver: bridge
+    name: intermediate_network
+  scheduler_redis_python_default:
+    external: true
+    name: scheduler_redis_python_default
