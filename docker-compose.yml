@@ -44,5 +44,4 @@ networks:
     driver: bridge
     name: intermediate_network
   scheduler_redis_python_default:
-    external: true
     name: scheduler_redis_python_default
