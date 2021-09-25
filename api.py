@@ -11,8 +11,9 @@ from rq.command import send_stop_job_command
 
 from redis import Redis
 from send_email import Email
+from webhook import Notification
 from utils import divide_list_email
-
+import json
 
 redis_connection = Redis(host='myproj_redis')
 queue = Queue(connection=redis_connection)
@@ -31,7 +32,6 @@ class DataSendEmail(BaseModel):
 class ScheduledDay(BaseModel):
     scheduled_day: str
 
-    
 
 @app.post("/send_email", status_code=201)
 def add_task(email: DataSendEmail):
@@ -62,6 +62,19 @@ def add_task_massive(email: DataSendEmail):
         email.receiver_email = contact
         instance = Email(**dict(email))
         job = queue.enqueue_in(timedelta(seconds=60),instance.send_email)
+        list_job_id.append(job.id)
+    return {"success": 'Added job',"job_id":list_job_id}
+
+@app.post("/send_massive_email_scheduler", status_code=201)
+def add_task_massive(email: DataSendEmail,scheduled_day: ScheduledDay):
+    scheduled_day  = dict(scheduled_day)['scheduled_day']
+    scheduled_day  = datetime.strptime(scheduled_day, '%d/%m/%YT%H:%M')
+    divide_list = divide_list_email(email.receiver_email)
+    list_job_id = []
+    for contact in divide_list:
+        email.receiver_email = contact
+        instance = Email(**dict(email))
+        job = queue.enqueue_at(scheduled_day,instance.send_email)
         list_job_id.append(job.id)
     return {"success": 'Added job',"job_id":list_job_id}
 
