@@ -41,6 +41,9 @@ services:
       - myproj_redis
     links:
       - myproj_redis
+    networks: 
+      - scheduler_redis_python_default
+      - intermediate_network
 
 networks: 
   intermediate_network:
